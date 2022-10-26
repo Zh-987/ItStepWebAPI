@@ -2,6 +2,7 @@ using ITSTEPASPNET.Data;
 using ITSTEPASPNET.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using System.Security.AccessControl;
 
 namespace ITSTEPASPNET.Controllers
@@ -48,6 +49,24 @@ namespace ITSTEPASPNET.Controllers
         public async Task<IActionResult> Post(WeatherForecast weather)
         {
             
+            if(weather.TemperatureC > 0 && weather.TemperatureC < 15)
+            {
+                weather.Summary = Summaries[4]; 
+            }
+            else if (weather.TemperatureC >= 16 && weather.TemperatureC <= 25)
+            {
+                weather.Summary = Summaries[5];
+            }
+            else if (weather.TemperatureC >= 26 && weather.TemperatureC <= 40)
+            {
+                weather.Summary = Summaries[7];
+            }
+            else
+            {
+                weather.Summary = Summaries[0];
+            }
+
+
             _dbConext.WeatherForecasts.Add(weather);
             await _dbConext.SaveChangesAsync();
 
@@ -67,6 +86,106 @@ namespace ITSTEPASPNET.Controllers
             await _dbConext.SaveChangesAsync();
             return NoContent();
         }
+
+        [HttpPut("Id")]
+        /*[ProducesResponseType(StatusCodes.Status204NoContent)]*/
+        public async Task<ActionResult> Put(Guid Id, WeatherForecast weather)
+        {
+            if (weather.TemperatureC > 0 && weather.TemperatureC < 15)
+            {
+                weather.Summary = Summaries[4];
+            }
+            else if (weather.TemperatureC >= 16 && weather.TemperatureC <= 25)
+            {
+                weather.Summary = Summaries[5];
+            }
+            else if (weather.TemperatureC >= 26 && weather.TemperatureC <= 40)
+            {
+                weather.Summary = Summaries[7];
+            }
+            else
+            {
+                weather.Summary = Summaries[0];
+            }
+
+
+            if (Id == weather.Id)
+            {
+
+                var weatherObject = _dbConext.WeatherForecasts.FindAsync(Id);
+
+                try
+                {
+                    if (await weatherObject != null)
+                    {
+                        /*_dbConext.Entry(weather).State = W *//* EntityState.Modified;*/
+                        /*weatherObject = weather;*/
+                        _dbConext.Entry(weatherObject).State = EntityState.Modified;
+                        await _dbConext.SaveChangesAsync();
+                    }
+                    else
+                    {
+                        _dbConext.WeatherForecasts.Add(weather);
+                    }
+
+                    await _dbConext.SaveChangesAsync();
+                }
+
+                catch (DbUpdateConcurrencyException)
+                {
+                   if (Id != weather.Id)
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+
+                }
+                
+            }
+            else
+            {
+                return BadRequest();
+            }
+
+            return NoContent();
+        }
+
+        [HttpPatch("Id")]
+        public async Task<ActionResult> Patch(Guid Id, WeatherForecast weather)
+        {
+            var weatherID = await _dbConext.WeatherForecasts.SingleAsync(x => x.Id == Id);
+
+                if (weather.TemperatureC > 0 && weather.TemperatureC < 15)
+                {
+                    weather.Summary = Summaries[4];
+                }
+                else if (weather.TemperatureC >= 16 && weather.TemperatureC <= 25)
+                {
+                    weather.Summary = Summaries[5];
+                }
+                else if (weather.TemperatureC >= 26 && weather.TemperatureC <= 40)
+                {
+                    weather.Summary = Summaries[7];
+                }
+                else
+                {
+                    weather.Summary = Summaries[0];
+                }
+
+            weatherID.Date = weather.Date;
+            weatherID.TemperatureC = weather.TemperatureC;
+            weatherID.Summary = weather.Summary;
+
+            await _dbConext.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+
+
 
         private static WeatherForecast WeatherForecastOut(WeatherForecast weather) => new WeatherForecast {
                 Id = weather.Id,
